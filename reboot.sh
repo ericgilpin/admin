@@ -84,10 +84,17 @@ for host in "${hosts[@]}"; do
     echo "Checking $host uptime..."
     if check_host "$host"; then
         uptime_output=$(run_ssh "$host" "uptime -p")
-        if [[ "$uptime_output" =~ "up [0-4] minute" ]]; then
-            results["$host"]="Successfully rebooted"
+        echo "Uptime output for $host: $uptime_output"  # Debug output
+        if [[ "$uptime_output" =~ up[[:space:]]+([0-9]+)[[:space:]]+minutes? ]]; then
+            minutes=${BASH_REMATCH[1]}
+            echo "$host has been up for $minutes minutes."  # Debug output
+            if [ "$minutes" -le 4 ]; then
+                results["$host"]="Successfully rebooted"
+            else
+                results["$host"]="Failed to reboot"
+            fi
         else
-            results["$host"]="Failed to reboot"
+            results["$host"]="Failed to parse uptime"
         fi
     else
         results["$host"]="Host not reachable"
